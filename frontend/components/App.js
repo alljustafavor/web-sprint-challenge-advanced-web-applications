@@ -48,7 +48,6 @@ export default function App() {
         }
       })
       .then((res) => {
-        console.log(res)
         localStorage.setItem('token', res.data.token)
         redirectToArticles()
         setMessage(res.data.message)
@@ -65,7 +64,22 @@ export default function App() {
     // If something goes wrong, check the status of the response:
     // if it's a 401 the token might have gone bad, and we should redirect to login.
     // Don't forget to turn off the spinner!
+    setSpinnerOn(true);
+    axiosWithAuth()
+      .get(articlesUrl)
+      .then((res) => {
+        setMessage(res.data.message)
+        setSpinnerOn(false)
+        setArticles(res.data.articles)
+      })
+      .catch((err) => {
+        console.log(err)
+        setSpinnerOn(false)
+        setMessage(err.data.message)
+      })
+    
   }
+
 
   const postArticle = article => {
     // ✨ implement
@@ -88,7 +102,7 @@ export default function App() {
   return (
     <>
       <Spinner />
-      <Message />
+      <Message message={message}/>
       <button id="logout" onClick={logout}>Logout from app</button>
       <div id="wrapper" style={{ opacity: spinnerOn ? "0.25" : "1" }}>
         <h1>Advanced Web Applications</h1>
@@ -102,7 +116,7 @@ export default function App() {
             isAuthenticated ? (
               <>
                 <ArticleForm />
-                <Articles />
+                <Articles articles={articles} getArticles={getArticles} isAuthenticated={isAuthenticated}/>
               </>
             ) : (
               <Navigate to="/" />
