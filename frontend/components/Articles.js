@@ -3,21 +3,18 @@ import { useNavigate } from 'react-router-dom'
 import PT from 'prop-types'
 
 export default function Articles(props) {
-  // ✨ where are my props? Destructure them here
-  const { articles, getArticles } = props
+  const { articles, getArticles, editArticle, deleteArticle, isAuth } = props
 
-  // ✨ implement conditional logic: if no token exists
-  // we should render a Navigate to login screen (React Router v.6)
   const navigate = useNavigate();
-  if (!localStorage.getItem('token')) {
+  if (!isAuth) {
     navigate('/')
   }
 
   useEffect(() => {
-    // ✨ grab the articles here, on first render only
-
     getArticles()
+
   }, [])
+
 
   return (
     <div className="articles">
@@ -34,8 +31,8 @@ export default function Articles(props) {
                   <p>Topic: {art.topic}</p>
                 </div>
                 <div>
-                  <button disabled={true} onClick={Function.prototype}>Edit</button>
-                  <button disabled={true} onClick={Function.prototype}>Delete</button>
+                  <button onClick={() => editArticle(art)}>Edit</button>
+                  <button disabled={false} onClick={() => deleteArticle(art.article_id)}>Delete</button>
                 </div>
               </div>
             )

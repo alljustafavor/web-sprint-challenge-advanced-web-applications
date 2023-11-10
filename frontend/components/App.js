@@ -16,15 +16,17 @@ export default function App() {
   const [message, setMessage] = useState('');
   const [articles, setArticles] = useState([]);
   const [currentArticleId, setCurrentArticleId] = useState();
+  const [currentArticle, setCurrentArticle] = useState();
   const [spinnerOn, setSpinnerOn] = useState(false);
+
 
   const navigate = useNavigate()
   const redirectToLogin = () => {
-    navigate("/")
+    navigate("/");
   };
 
   const redirectToArticles = () => {
-    navigate('/articles')
+    navigate('/articles');
   };
 
   const logout = () => {
@@ -35,74 +37,99 @@ export default function App() {
       setMessage("Already Logged Out");
     }
     redirectToLogin();
-  }
+  };
 
   const login = ({ username, password }) => {
+    setSpinnerOn(true)
     axios
       .post(loginUrl, {
         username: username,
         password: password
-      }, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
       })
       .then((res) => {
-        localStorage.setItem('token', res.data.token)
-        redirectToArticles()
-        setMessage(res.data.message)
+        setSpinnerOn(false);
+        localStorage.setItem('token', res.data.token);
+        redirectToArticles();
+        setMessage(res.data.message);
       })
       .catch((err) => console.log(err))
+    setSpinnerOn(false)
   }
 
   const getArticles = () => {
-    // ✨ implement
-    // We should flush the message state, turn on the spinner
-    // and launch an authenticated request to the proper endpoint.
-    // On success, we should set the articles in their proper state and
-    // put the server success message in its proper state.
-    // If something goes wrong, check the status of the response:
-    // if it's a 401 the token might have gone bad, and we should redirect to login.
-    // Don't forget to turn off the spinner!
     setSpinnerOn(true);
     axiosWithAuth()
       .get(articlesUrl)
       .then((res) => {
-        setMessage(res.data.message)
-        setSpinnerOn(false)
-        setArticles(res.data.articles)
+        setMessage(res.data.message);
+        setSpinnerOn(false);
+        setArticles(res.data.articles);
       })
       .catch((err) => {
-        console.log(err)
-        setSpinnerOn(false)
-        setMessage(err.data.message)
+        console.log(err);
+        setSpinnerOn(false);
+        setMessage(err.data.message);
+      });
+  };
+
+  const postArticle = (article) => {
+    setSpinnerOn(true);
+    axiosWithAuth()
+      .post(articlesUrl, article)
+      .then((res) => {
+        setSpinnerOn(false);
+        setCurrentArticleId(res.data.article.article_id);
+        setMessage(res.data.message);
+        setArticles(prevArticles => [...prevArticles, res.data.article]);
       })
-    
-  }
-
-
-  const postArticle = article => {
-    // ✨ implement
-    // The flow is very similar to the `getArticles` function.
-    // You'll know what to do! Use log statements or breakpoints
-    // to inspect the response from the server.
-  }
+      .catch((err) => {
+        setSpinnerOn(false);
+        console.log(err);
+      });
+  };
 
   const updateArticle = ({ article_id, article }) => {
-    // ✨ implement
-    // You got this!
-  }
+    setSpinnerOn(true);
+    axiosWithAuth()
+      .put(`${articlesUrl}/${article_id}`, article)
+      .then((res) => {
+        setMessage(res.data.message);
+        setSpinnerOn(false);
+        setArticles((prevArticles) => prevArticles.filter((art) => art.article_id !== article_id));
+        setArticles((prevArticles) => [...prevArticles, res.data.article]);
+        setMessage(res.data.message);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
 
   const deleteArticle = article_id => {
-    // ✨ implement
+    setSpinnerOn(true);
+    axiosWithAuth()
+      .delete(`${articlesUrl}/${article_id}`)
+      .then((res) => {
+        setSpinnerOn(false);
+        setMessage(res.data.message);
+        setArticles(prevArticles => prevArticles.filter(art => art.article_id !== article_id));
+      })
+      .catch(err => {
+        setSpinnerOn(false);
+        console.log(err);
+      });
   }
 
-  const isAuthenticated = localStorage.getItem('token');
+  const editArticle = (article) => {
+    setCurrentArticle(article);
+  }
+
+
+  const isAuth = localStorage.getItem('token');
 
   return (
     <>
       <Spinner />
-      <Message message={message}/>
+      <Message message={message} />
       <button id="logout" onClick={logout}>Logout from app</button>
       <div id="wrapper" style={{ opacity: spinnerOn ? "0.25" : "1" }}>
         <h1>Advanced Web Applications</h1>
@@ -113,10 +140,10 @@ export default function App() {
         <Routes>
           <Route path="/" element={<LoginForm login={login} />} />
           <Route path="articles" element={
-            isAuthenticated ? (
+            isAuth ? (
               <>
-                <ArticleForm />
-                <Articles articles={articles} getArticles={getArticles} isAuthenticated={isAuthenticated}/>
+                <ArticleForm currentArticle={currentArticle} postArticle={postArticle} updateArticle={updateArticle} />
+                <Articles articles={articles} getArticles={getArticles} updateArticle={updateArticle} deleteArticle={deleteArticle} editArticle={editArticle} isAuth={isAuth} />
               </>
             ) : (
               <Navigate to="/" />
